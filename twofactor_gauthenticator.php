@@ -378,17 +378,23 @@ public function twofactor_gauthenticator_form()
         $html_setup_all_fields = '<input type="button" class="button mainaction" id="2FA_setup_fields" value="'.$this->gettext('setup_all_fields').'">';
     }
 
-    $html_check_code = '<br /><br /><input type="button" class="button mainaction" id="2FA_check_code" value="'.$this->gettext('check_code').'"> &nbsp;&nbsp; <input type="text" id="2FA_code_to_check" maxlength="10" placeholder="Enter 6-digit code">';
+    // Code verification section - moved before save button
+    $html_check_code = '<div id="code_verification_section" style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">';
+    $html_check_code .= '<h4>' . $this->gettext('verify_code') . '</h4>';
+    $html_check_code .= '<p>' . $this->gettext('msg_help') . '</p>';
+    $html_check_code .= '<input type="text" id="2FA_code_to_check" maxlength="10" placeholder="Enter 6-digit code" style="margin-right: 10px;">';
+    $html_check_code .= '<input type="button" class="button mainaction" id="2FA_check_code" value="'.$this->gettext('check_code').'">';
+    $html_check_code .= '<div id="code_verification_status" style="margin-top: 10px; font-weight: bold;"></div>';
+    $html_check_code .= '</div>';
 
-    $html_help_code = '<br /><br /> &#9432; '.$this->gettext('msg_help');
-
-    // Use RoundCube's standard button helper
+    // Use RoundCube's standard button helper - MOVED TO BOTTOM
     $save_button = $rcmail->output->button(array(
         'command' => 'plugin.twofactor_gauthenticator-save',
         'type' => 'input',
         'class' => 'button mainaction',
         'label' => 'save',
-        'id' => '2FA_save_button'
+        'id' => '2FA_save_button',
+        'disabled' => true  // Initially disabled
     ));
 
     // Build the table with the divs around it
@@ -400,10 +406,12 @@ public function twofactor_gauthenticator_form()
             $table->show() .
             html::p(
                 null,
-                $save_button
-                .$html_setup_all_fields
-                .$html_check_code
-                .$html_help_code
+                $html_setup_all_fields
+            ) .
+            $html_check_code .  // Code verification before save button
+            html::p(
+                array('style' => 'margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;'),
+                $save_button  // Save button at the very bottom
             )
         )
     );
@@ -422,7 +430,6 @@ public function twofactor_gauthenticator_form()
 
     return $out;
 }
-
 
     // used with ajax
     public function checkCode()
