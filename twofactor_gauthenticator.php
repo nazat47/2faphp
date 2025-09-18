@@ -310,9 +310,7 @@ class twofactor_gauthenticator extends rcube_plugin
     }
 
     // form config
-
-
-public function twofactor_gauthenticator_form()
+ public function twofactor_gauthenticator_form()
 {
     $rcmail = rcmail::get_instance();
 
@@ -375,27 +373,18 @@ public function twofactor_gauthenticator_form()
     // button to setup all fields if doesn't exists secret
     $html_setup_all_fields = '';
     if (empty($data['secret'])) {
-        $html_setup_all_fields = '<input type="button" class="button mainaction" id="2FA_setup_fields" value="'.$this->gettext('setup_all_fields').'">';
+        $html_setup_all_fields = '<p><input type="button" class="button mainaction" id="2FA_setup_fields" value="'.$this->gettext('setup_all_fields').'"></p>';
     }
 
-    // Code verification section - moved before save button
-    $html_check_code = '<div id="code_verification_section" style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; background-color: #f9f9f9;">';
-    $html_check_code .= '<h4>' . $this->gettext('verify_code') . '</h4>';
-    $html_check_code .= '<p>' . $this->gettext('msg_help') . '</p>';
-    $html_check_code .= '<input type="text" id="2FA_code_to_check" maxlength="10" placeholder="Enter 6-digit code" style="margin-right: 10px;">';
-    $html_check_code .= '<input type="button" class="button mainaction" id="2FA_check_code" value="'.$this->gettext('check_code').'">';
-    $html_check_code .= '<div id="code_verification_status" style="margin-top: 10px; font-weight: bold;"></div>';
-    $html_check_code .= '</div>';
+    $html_check_code = '<br /><br /><input type="button" class="button mainaction" id="2FA_check_code" value="'.$this->gettext('check_code').'"> &nbsp;&nbsp; <input type="text" id="2FA_code_to_check" maxlength="10" placeholder="Enter 6-digit code">';
 
-    // Use RoundCube's standard button helper - MOVED TO BOTTOM
-    $save_button = $rcmail->output->button(array(
-        'command' => 'plugin.twofactor_gauthenticator-save',
-        'type' => 'input',
-        'class' => 'button mainaction',
-        'label' => 'save',
-        'id' => '2FA_save_button',
-        'disabled' => true  // Initially disabled
-    ));
+    $html_help_code = '<br /><br /> &#9432; '.$this->gettext('msg_help');
+
+    // Modified save button with ID and initially disabled if needed
+    $save_button_disabled = empty($data['secret']) || !($data['activate'] ?? false) || empty($data['recovery_codes']) ? 'disabled' : '';
+    $save_button_class = $save_button_disabled ? 'button button-disabled' : 'button mainaction';
+    
+    $save_button = '<input type="submit" class="' . $save_button_class . '" id="2FA_save_button" value="' . rcube::Q($this->gettext('save')) . '" command="plugin.twofactor_gauthenticator-save" ' . $save_button_disabled . '>';
 
     // Build the table with the divs around it
     $out = html::div(
@@ -406,12 +395,10 @@ public function twofactor_gauthenticator_form()
             $table->show() .
             html::p(
                 null,
-                $html_setup_all_fields
-            ) .
-            $html_check_code .  // Code verification before save button
-            html::p(
-                array('style' => 'margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;'),
-                $save_button  // Save button at the very bottom
+                $save_button
+                .$html_setup_all_fields
+                .$html_check_code
+                .$html_help_code
             )
         )
     );
