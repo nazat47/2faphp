@@ -1,0 +1,25 @@
+.project
+.buildpath
+.settings*
+.php-cs-fixer.cache
+config.inc.php
+
+# Composer related
+vendor/
+composer.lock
+
+# Code formatting vendor
+tools/php-cs-fixer/vendor
+
+#####=== Vim ===#####
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~
+
+
+.DS_Store
+
+db/*
