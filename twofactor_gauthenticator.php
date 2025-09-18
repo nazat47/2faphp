@@ -310,8 +310,7 @@ class twofactor_gauthenticator extends rcube_plugin
     }
 
     // form config
-  <?php
-// Modify the twofactor_gauthenticator_form() method in your plugin
+
 
 public function twofactor_gauthenticator_form()
 {
@@ -423,7 +422,7 @@ public function twofactor_gauthenticator_form()
 
     return $out;
 }
-?>
+
 
     // used with ajax
     public function checkCode()
