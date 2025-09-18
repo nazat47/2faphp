@@ -17,7 +17,7 @@ $rcmail_config['allow_save_device_30days'] = true;
 $rcmail_config['twofactor_formfield_as_password'] = false;
 
 // Users allowed to use plugin (IMPORTANT: other users DON'T have plugin activated). Regex is supported.
-$rcmail_config['users_allowed_2FA'] = array('ale.*@tereborace.com', 'administrator@tereborace.com');
+//$rcmail_config['users_allowed_2FA'] = array('ale.*@tereborace.com', 'administrator@tereborace.com');
 
 // If true, 2FA failure will be logged in file log_errors_2FA.txt under HOME_RC/logs/log_errors_2FA.txt.
 // Suggested by @pngd (issue 131)

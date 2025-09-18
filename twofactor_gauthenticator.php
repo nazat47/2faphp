@@ -310,7 +310,10 @@ class twofactor_gauthenticator extends rcube_plugin
     }
 
     // form config
-    public function twofactor_gauthenticator_form()
+  <?php
+// Modify the twofactor_gauthenticator_form() method in your plugin
+
+public function twofactor_gauthenticator_form()
 {
     $rcmail = rcmail::get_instance();
 
@@ -348,7 +351,7 @@ class twofactor_gauthenticator extends rcube_plugin
     $i = 0;
     for ($i = 0; $i < $this->_number_recovery_codes; $i++) {
         $value = isset($data['recovery_codes'][$i]) ? $data['recovery_codes'][$i] : '';
-        $html_recovery_codes .= ' <input type="password" name="2FA_recovery_codes[]" value="'.$value.'" maxlength="10" required> &nbsp; ';
+        $html_recovery_codes .= ' <input type="password" name="2FA_recovery_codes[]" value="'.$value.'" maxlength="10" style="margin: 2px;"> &nbsp; ';
     }
     if ($data['secret'] ?? '') {
         $html_recovery_codes .= '<input type="button" class="button mainaction" id="2FA_show_recovery_codes" value="'.$this->gettext('show_recovery_codes').'">';
@@ -380,11 +383,14 @@ class twofactor_gauthenticator extends rcube_plugin
 
     $html_help_code = '<br /><br /> &#9432; '.$this->gettext('msg_help');
 
-    // Modified save button with ID and initially disabled if needed
-    $save_button_disabled = empty($data['secret']) || !($data['activate'] ?? false) || empty($data['recovery_codes']) ? 'disabled' : '';
-    $save_button_class = $save_button_disabled ? 'button button-disabled' : 'button mainaction';
-    
-    $save_button = '<input type="submit" class="' . $save_button_class . '" id="2FA_save_button" value="' . rcube::Q($this->gettext('save')) . '" command="plugin.twofactor_gauthenticator-save" ' . $save_button_disabled . '>';
+    // Use RoundCube's standard button helper
+    $save_button = $rcmail->output->button(array(
+        'command' => 'plugin.twofactor_gauthenticator-save',
+        'type' => 'input',
+        'class' => 'button mainaction',
+        'label' => 'save',
+        'id' => '2FA_save_button'
+    ));
 
     // Build the table with the divs around it
     $out = html::div(
@@ -417,6 +423,7 @@ class twofactor_gauthenticator extends rcube_plugin
 
     return $out;
 }
+?>
 
     // used with ajax
     public function checkCode()

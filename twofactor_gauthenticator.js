@@ -167,6 +167,9 @@ if (window.rcmail) {
 // Enhanced JavaScript for twofactor_gauthenticator plugin
 // Add this to your twofactor_gauthenticator.js file
 
+// Enhanced JavaScript for twofactor_gauthenticator plugin
+// Add this to your twofactor_gauthenticator.js file
+
 $(document).ready(function() {
     
     // Function to validate all required fields
@@ -184,18 +187,29 @@ $(document).ready(function() {
             }
         });
         
-        // Check if a test code has been verified (you might need to track this)
+        // Check if a test code has been verified (make this optional for now)
         hasValidCode = $('#code_verification_status').data('verified') === true;
         
-        // Enable/disable save button based on validation
-        var isValid = secret !== '' && activate && allRecoveryCodesFilled && hasValidCode;
+        // For initial setup, don't require code verification - just secret, activation, and recovery codes
+        var isValid = secret !== '' && activate && allRecoveryCodesFilled;
+        
+        // Find save button using multiple selectors
+        var $saveButton = $('input[type="submit"]').filter(function() {
+            return $(this).val().toLowerCase().indexOf('save') !== -1 || 
+                   $(this).hasClass('mainaction');
+        });
+        
+        if ($saveButton.length === 0) {
+            // Fallback - look for any submit button
+            $saveButton = $('input[type="submit"], button[type="submit"]');
+        }
         
         if (isValid) {
-            $('input[command="plugin.twofactor_gauthenticator-save"]').prop('disabled', false)
+            $saveButton.prop('disabled', false)
                 .removeClass('button-disabled').addClass('button mainaction');
             $('#validation-message').hide();
         } else {
-            $('input[command="plugin.twofactor_gauthenticator-save"]').prop('disabled', true)
+            $saveButton.prop('disabled', true)
                 .removeClass('mainaction').addClass('button-disabled');
             showValidationMessage();
         }
@@ -227,7 +241,7 @@ $(document).ready(function() {
         }
         
         if ($('#code_verification_status').data('verified') !== true) {
-            messages.push('Please verify a test code from your authenticator app');
+            messages.push('Please verify a test code from your authenticator app (optional for initial setup)');
         }
         
         var messageHtml = '<div id="validation-message" class="boxwarning" style="margin: 10px 0;">' +
@@ -293,7 +307,7 @@ $(document).ready(function() {
     // Enhanced setup all fields function
     function setupAllFields() {
         // Generate secret
-        var secret = generateRandomSecret(16);
+        var secret = generateRandomSecret(32); // Longer secret for better security
         $('#2FA_secret').val(secret);
         
         // Generate recovery codes
@@ -307,16 +321,48 @@ $(document).ready(function() {
         // Enable buttons that were previously disabled
         $('#2FA_create_secret, #2FA_show_recovery_codes, #2FA_change_qr_code').prop('disabled', false);
         
-        // Generate and show QR code
-        if (typeof generateQRCode === 'function') {
-            generateQRCode();
-        }
+        // Trigger QR code generation if the function exists
+        setTimeout(function() {
+            if ($('#2FA_change_qr_code').length > 0) {
+                $('#2FA_change_qr_code').click();
+            }
+            
+            // Try to trigger existing QR code functionality
+            if (typeof window.generate_qrcode === 'function') {
+                window.generate_qrcode();
+            } else if (typeof generate_qrcode === 'function') {
+                generate_qrcode();
+            }
+            
+            // Alternative: manually trigger QR code display
+            if ($('#2FA_qr_code').length > 0) {
+                try {
+                    var username = rcmail.env.username || 'User';
+                    var appname = rcmail.env.product_name || 'RoundCube';
+                    var qrtext = 'otpauth://totp/' + encodeURIComponent(username) + '?secret=' + secret + '&issuer=' + encodeURIComponent(appname);
+                    
+                    // If QRCode library is available
+                    if (typeof QRCode !== 'undefined') {
+                        $('#2FA_qr_code').empty().show();
+                        new QRCode(document.getElementById('2FA_qr_code'), {
+                            text: qrtext,
+                            width: 200,
+                            height: 200
+                        });
+                    }
+                } catch (e) {
+                    console.log('QR code generation failed:', e);
+                }
+            }
+        }, 100);
         
-        // Validate after setup
-        setTimeout(validateFields, 100);
+        // Validate after setup with a longer delay to ensure all fields are updated
+        setTimeout(function() {
+            validateFields();
+        }, 200);
     }
     
-    // Generate random secret (simplified version)
+    // Generate random secret (Base32 compatible)
     function generateRandomSecret(length) {
         var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
         var result = '';
@@ -332,21 +378,50 @@ $(document).ready(function() {
     }
     
     // Event listeners
-    $('#2FA_secret, #2FA_activate, input[name="2FA_recovery_codes[]"]').on('change keyup', validateFields);
+    $('#2FA_secret, #2FA_activate').on('change keyup input', function() {
+        setTimeout(validateFields, 50);
+    });
+    
+    $(document).on('change keyup input', 'input[name="2FA_recovery_codes[]"]', function() {
+        setTimeout(validateFields, 50);
+    });
+    
     $('#2FA_check_code').on('click', enhancedCheckCode);
     $('#2FA_setup_fields').on('click', setupAllFields);
     
-    // Prevent form submission if validation fails
+    // Also bind to the existing setup button if it exists
+    $(document).on('click', '#2FA_setup_all_fields', setupAllFields);
+    
+    // Prevent form submission if validation fails (make this less strict)
     $('#twofactor_gauthenticator-form').on('submit', function(e) {
-        if (!validateFields()) {
+        var secret = $('#2FA_secret').val().trim();
+        var activate = $('#2FA_activate').is(':checked');
+        var allRecoveryCodesFilled = true;
+        
+        $('input[name="2FA_recovery_codes[]"]').each(function() {
+            if ($(this).val().trim() === '') {
+                allRecoveryCodesFilled = false;
+                return false;
+            }
+        });
+        
+        if (activate && (!secret || !allRecoveryCodesFilled)) {
             e.preventDefault();
-            alert('Please complete all required fields before saving.');
+            alert('Please fill in the secret key and all recovery codes when 2FA is activated.');
             return false;
         }
     });
     
-    // Initial validation
-    setTimeout(validateFields, 500);
+    // Initial validation with delay to ensure DOM is ready
+    setTimeout(function() {
+        validateFields();
+        
+        // Debug: Log button information
+        console.log('Save buttons found:', $('input[type="submit"]').length);
+        $('input[type="submit"]').each(function(i) {
+            console.log('Button ' + i + ':', $(this).attr('class'), $(this).val());
+        });
+    }, 1000);
     
     // Add CSS for disabled button
     $('<style>')
